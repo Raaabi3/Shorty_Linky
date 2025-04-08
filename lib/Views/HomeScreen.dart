@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:security_camera/Controllers/UrlHistoryController%20.dart';
+import 'package:security_camera/Models/url_history.dart';
 import 'package:security_camera/Views/ResultScreen.dart';
 import 'package:security_camera/Widgets/CustomText.dart';
 import 'package:security_camera/Widgets/CustomTextField.dart';
@@ -16,6 +17,8 @@ class Homescreen extends StatefulWidget {
 
 class _HomescreenState extends State<Homescreen> {
     bool hasHistory = false;
+      List<UrlHistory> history = [];
+
 
  @override
   void initState() {
@@ -23,13 +26,15 @@ class _HomescreenState extends State<Homescreen> {
     _checkHistory();
     widget.controller.watchChanges().listen((_) => _checkHistory());
   }
-  void _checkHistory() {
-    final history = widget.controller.getHistory();
-    setState(() => hasHistory = history.isNotEmpty);
+   void _checkHistory() {
+    final updatedHistory = widget.controller.getHistory();
+    setState(() {
+      history = updatedHistory;
+    });
   }
   void _onTabSelected(AppPage page) {
-    if (page == AppPage.results) {
-      final latest = widget.controller.getHistory().first;
+    if (page == AppPage.results && history.isNotEmpty) {
+      final latest = history.first;
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -43,6 +48,10 @@ class _HomescreenState extends State<Homescreen> {
       );
     }
   }
+
+
+
+
   String _shortenUrl(String originalUrl) {
     return 'https://short.ly/${originalUrl.hashCode.toRadixString(36)}';
   }
@@ -72,8 +81,11 @@ class _HomescreenState extends State<Homescreen> {
           children: [
             CustomText.title(text: "Shorten Your Links"),
             const SizedBox(height: 8),
-            CustomText.subtitle(
-              text: "Tired of Long Links? This app provides easy-to-use URL shortening",
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: CustomText.subtitle(
+                text: "Tired of Long Links? This app provides easy-to-use URL shortening",
+              ),
             ),
             const SizedBox(height: 16),
             Padding(
@@ -81,7 +93,7 @@ class _HomescreenState extends State<Homescreen> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Image.asset("assets/images/www2.gif", fit: BoxFit.contain),
+                  Center(child: Image.asset("assets/images/www2.gif", fit: BoxFit.contain)),
                   CustomTextField.urlInput(
                     hintText: "Paste URL here...",
                     onValidUrlSubmitted: _handleValidUrl,
@@ -94,8 +106,9 @@ class _HomescreenState extends State<Homescreen> {
       ),
        bottomNavigationBar: SharedBottomNav(
         currentPage: AppPage.home,
-        isResultEnabled: hasHistory,
+        isResultEnabled: history.isNotEmpty,
         onTabSelected: _onTabSelected,
+        history: history,
       ),
     );
   }

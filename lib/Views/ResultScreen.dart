@@ -28,6 +28,8 @@ class Resultscreen extends StatefulWidget {
 
 class _ResultscreenState extends State<Resultscreen> {
     late final StreamSubscription _historySubscription;
+      List<UrlHistory> history = [];
+
   Set<int> _selectedItems = {};
   bool _isSelectMode = false;
   AppPage currentPage = AppPage.results;
@@ -40,17 +42,17 @@ class _ResultscreenState extends State<Resultscreen> {
     if (widget.shouldSave) {
       _saveCurrentUrl();
     }
+      _updateHistory();
 
-    _checkHistory();
 
     _historySubscription = widget.controller
         .watchChanges()
         .listen((_) => _safeCheckHistory());
   }
 
-  void _safeCheckHistory() {
+   void _safeCheckHistory() {
     if (!mounted) return;
-    _checkHistory();
+    _updateHistory();
   }
   void _onTabSelected(AppPage page) {
     if (page == AppPage.home) {
@@ -58,6 +60,13 @@ class _ResultscreenState extends State<Resultscreen> {
     }
   }
 
+ void _updateHistory() {
+    final updated = widget.controller.getHistory();
+    setState(() {
+      history = updated;
+      hasHistory = updated.isNotEmpty;
+    });
+  }
  void _checkHistory() {
     final history = widget.controller.getHistory();
     setState(() => hasHistory = history.isNotEmpty);
@@ -143,11 +152,12 @@ class _ResultscreenState extends State<Resultscreen> {
           Expanded(child: _buildHistoryList()),
         ],
       ),
-      bottomNavigationBar: SharedBottomNav(
-        currentPage: currentPage,
-        isResultEnabled: hasHistory,
-        onTabSelected: _onTabSelected,
-      ),
+       bottomNavigationBar: SharedBottomNav(
+      currentPage: currentPage,
+      isResultEnabled: hasHistory,
+      onTabSelected: _onTabSelected,
+        history: history,
+    ),
     );
   }
 
@@ -235,23 +245,29 @@ class _ResultscreenState extends State<Resultscreen> {
     );
   }
 
-  Widget _buildHistoryList() {
-    return StreamBuilder<BoxEvent>(
-      stream: widget.controller.watchChanges(),
-      builder: (context, snapshot) {
-        final historyMap = widget.controller.getHistoryMap();
-        final historyEntries = historyMap.entries.toList().reversed.toList();
+  StreamBuilder<BoxEvent> _buildHistoryList() {
+  return StreamBuilder<BoxEvent>(
+    stream: widget.controller.watchChanges(),
+    builder: (context, snapshot) {
+      final historyMap = widget.controller.getHistoryMap();
+      final historyEntries = historyMap.entries.toList().reversed.toList();
 
-        return ListView.builder(
-          itemCount: historyEntries.length,
-          itemBuilder: (context, index) {
-            final entry = historyEntries[index];
-            return _buildHistoryItem(entry.key, entry.value);
-          },
+      if (historyEntries.isEmpty) {
+        return Center(
+          child: Text("No history available", style: TextStyle(fontSize: 18, color: Colors.grey)),
         );
-      },
-    );
-  }
+      }
+
+      return ListView.builder(
+        itemCount: historyEntries.length,
+        itemBuilder: (context, index) {
+          final entry = historyEntries[index];
+          return _buildHistoryItem(entry.key, entry.value);
+        },
+      );
+    },
+  );
+}
 
   Widget _buildHistoryItem(int key, UrlHistory item) {
     return InkWell(
@@ -266,6 +282,7 @@ class _ResultscreenState extends State<Resultscreen> {
           leading:
               _isSelectMode
                   ? Checkbox(
+                    activeColor: Colors.blue,
                     value: _selectedItems.contains(key),
                     onChanged: (_) => _toggleItemSelection(key),
                   )
