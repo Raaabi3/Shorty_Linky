@@ -57,7 +57,7 @@ class _HomescreenState extends State<Homescreen> {
  _handleValidUrl(String url) async {
   final provider = Provider.of<Converturlprovider>(context, listen: false);
 
-  await provider.shortenUrlExample(url); // wait for the async call to complete
+  await provider.shortenUrlExample(url); 
 
   final shortened = provider.shortenedData;
 

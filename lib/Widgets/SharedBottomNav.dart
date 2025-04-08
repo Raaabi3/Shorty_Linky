@@ -34,14 +34,14 @@ class SharedBottomNav extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Icon(
             Icons.home,
-            color: currentPage == AppPage.home ? Colors.blue : Colors.grey, // Default grey, blue when selected
+            color: currentPage == AppPage.home ? Colors.blue : Colors.grey, 
           ),
           label: 'Home',
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.link,
-            color: currentPage == AppPage.results ? Colors.blue : Colors.grey, // Default grey, blue when selected
+            color: currentPage == AppPage.results ? Colors.blue : Colors.grey, 
           ),
           label: 'Results',
         ),
