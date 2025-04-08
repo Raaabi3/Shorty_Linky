@@ -3,6 +3,7 @@ import 'package:security_camera/Controllers/UrlHistoryController%20.dart';
 import 'package:security_camera/Views/ResultScreen.dart';
 import 'package:security_camera/Widgets/CustomText.dart';
 import 'package:security_camera/Widgets/CustomTextField.dart';
+import 'package:security_camera/Widgets/SharedBottomNav.dart';
 
 class Homescreen extends StatefulWidget {
   final UrlHistoryController controller;
@@ -14,10 +15,38 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
+    bool hasHistory = false;
+
+ @override
+  void initState() {
+    super.initState();
+    _checkHistory();
+    widget.controller.watchChanges().listen((_) => _checkHistory());
+  }
+  void _checkHistory() {
+    final history = widget.controller.getHistory();
+    setState(() => hasHistory = history.isNotEmpty);
+  }
+  void _onTabSelected(AppPage page) {
+    if (page == AppPage.results) {
+      final latest = widget.controller.getHistory().first;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Resultscreen(
+            originalUrl: latest.originalUrl,
+            shortenedUrl: latest.shortUrl,
+            controller: widget.controller,
+            shouldSave: false,
+          ),
+        ),
+      );
+    }
+  }
   String _shortenUrl(String originalUrl) {
-    // Replace with actual API call
     return 'https://short.ly/${originalUrl.hashCode.toRadixString(36)}';
   }
+
 
   void _handleValidUrl(String url) {
     final shortenedUrl = _shortenUrl(url);
@@ -62,6 +91,11 @@ class _HomescreenState extends State<Homescreen> {
             ),
           ],
         ),
+      ),
+       bottomNavigationBar: SharedBottomNav(
+        currentPage: AppPage.home,
+        isResultEnabled: hasHistory,
+        onTabSelected: _onTabSelected,
       ),
     );
   }

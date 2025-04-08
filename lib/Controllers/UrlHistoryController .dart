@@ -5,15 +5,15 @@ class UrlHistoryController {
   late Box<UrlHistory> _urlHistoryBox;
 
   Future<void> init() async {
-    try {
-      await Hive.deleteBoxFromDisk('urlHistoryBox');
-      _urlHistoryBox = await Hive.openBox<UrlHistory>('urlHistoryBox');
-    } catch (e) {
-      print('Error initializing Hive: $e');
-      await Hive.deleteFromDisk();
-      _urlHistoryBox = await Hive.openBox<UrlHistory>('urlHistoryBox');
-    }
+  try {
+    _urlHistoryBox = await Hive.openBox<UrlHistory>('urlHistoryBox');
+  } catch (e) {
+    print('Error initializing Hive: $e');
+    await Hive.deleteFromDisk(); 
+    _urlHistoryBox = await Hive.openBox<UrlHistory>('urlHistoryBox');
   }
+}
+
 
   Future<void> addUrl({
     required String originalUrl,

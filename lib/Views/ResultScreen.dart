@@ -1,20 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:security_camera/Controllers/UrlHistoryController%20.dart';
 import 'package:security_camera/Models/url_history.dart';
 import 'package:security_camera/Widgets/CustomText.dart';
+import 'package:security_camera/Widgets/SharedBottomNav.dart';
 
 class Resultscreen extends StatefulWidget {
   final String originalUrl;
   final String shortenedUrl;
   final UrlHistoryController controller;
+  final bool shouldSave;
 
   const Resultscreen({
     super.key,
     required this.originalUrl,
     required this.shortenedUrl,
     required this.controller,
+    this.shouldSave = true, 
   });
 
   @override
@@ -22,21 +27,55 @@ class Resultscreen extends StatefulWidget {
 }
 
 class _ResultscreenState extends State<Resultscreen> {
+    late final StreamSubscription _historySubscription;
   Set<int> _selectedItems = {};
   bool _isSelectMode = false;
+  AppPage currentPage = AppPage.results;
+  bool hasHistory = false;
 
   @override
   void initState() {
     super.initState();
-    _saveCurrentUrl();
+
+    if (widget.shouldSave) {
+      _saveCurrentUrl();
+    }
+
+    _checkHistory();
+
+    _historySubscription = widget.controller
+        .watchChanges()
+        .listen((_) => _safeCheckHistory());
+  }
+
+  void _safeCheckHistory() {
+    if (!mounted) return;
+    _checkHistory();
+  }
+  void _onTabSelected(AppPage page) {
+    if (page == AppPage.home) {
+      Navigator.pop(context); 
+    }
+  }
+
+ void _checkHistory() {
+    final history = widget.controller.getHistory();
+    setState(() => hasHistory = history.isNotEmpty);
   }
 
   Future<void> _saveCurrentUrl() async {
-    await widget.controller.addUrl(
-      originalUrl: widget.originalUrl,
-      shortUrl: widget.shortenedUrl,
-    );
+  await widget.controller.addUrl(
+    originalUrl: widget.originalUrl,
+    shortUrl: widget.shortenedUrl,
+  );
+  if (!mounted) return; 
+}
+ @override
+  void dispose() {
+    _historySubscription.cancel();
+    super.dispose();
   }
+
 
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text)).then((_) {
@@ -79,17 +118,17 @@ class _ResultscreenState extends State<Resultscreen> {
         backgroundColor: Colors.blue,
         title:
             _isSelectMode
-                ? Text('${_selectedItems.length} selected')
+                ? Text('${_selectedItems.length} selected',style: TextStyle(color:Colors.white))
                 : CustomText.title2(text: "Shortened Link"),
         centerTitle: true,
         leading:
             _isSelectMode
                 ? IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Icons.close,color: Colors.white,),
                   onPressed: _toggleSelectMode,
                 )
                 : IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
         actions: _buildAppBarActions(),
@@ -100,10 +139,14 @@ class _ResultscreenState extends State<Resultscreen> {
           if (!_isSelectMode) _buildCurrentUrlCard(),
           if (!_isSelectMode)
             Image.asset("assets/images/www3.gif", height: 200),
-          Spacer(),
           _buildHistoryHeader(),
           Expanded(child: _buildHistoryList()),
         ],
+      ),
+      bottomNavigationBar: SharedBottomNav(
+        currentPage: currentPage,
+        isResultEnabled: hasHistory,
+        onTabSelected: _onTabSelected,
       ),
     );
   }
@@ -114,6 +157,7 @@ class _ResultscreenState extends State<Resultscreen> {
         IconButton(
           icon: const Icon(Icons.delete),
           onPressed: _selectedItems.isNotEmpty ? _deleteSelected : null,
+          color: Colors.white
         ),
       ];
     } else {
@@ -121,6 +165,7 @@ class _ResultscreenState extends State<Resultscreen> {
         IconButton(
           icon: const Icon(Icons.select_all),
           onPressed: _toggleSelectMode,
+          color: Colors.white
         ),
       ];
     }
@@ -167,12 +212,23 @@ class _ResultscreenState extends State<Resultscreen> {
         children: [
           CustomText.subtitle(text: "Converted Links History"),
           if (!_isSelectMode)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () async {
-                await widget.controller.clearHistory();
-                setState(() {});
-              },
+            Row(
+              children: [
+                Text(
+                  "Delete all",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.blue),
+                  onPressed: () async {
+                    await widget.controller.clearHistory();
+                    setState(() {});
+                  },
+                ),
+              ],
             ),
         ],
       ),

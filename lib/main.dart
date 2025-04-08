@@ -11,19 +11,14 @@ void main() async {
   final controller = UrlHistoryController();
 
   try {
-    final appDir = await getApplicationDocumentsDirectory();
-    await Hive.initFlutter(appDir.path);
-    Hive.registerAdapter(UrlHistoryAdapter());
-    await controller.init();
-  } catch (e) {
-    print('Initialization error: $e');
-    await Hive.close();
-    await Hive.deleteFromDisk();
-    final appDir = await getApplicationDocumentsDirectory();
-    await Hive.initFlutter(appDir.path);
-    Hive.registerAdapter(UrlHistoryAdapter());
-    await controller.init();
-  }
+  final appDir = await getApplicationDocumentsDirectory();
+  await Hive.initFlutter(appDir.path);
+  Hive.registerAdapter(UrlHistoryAdapter());
+  await controller.init();
+} catch (e) {
+  print('Initialization error: $e');
+}
+
 
   runApp(MyApp(controller: controller));
 }
