@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:security_camera/Controllers/UrlHistoryController%20.dart';
+import 'package:security_camera/Helpers/ConvertUrlPRovider.dart';
 import 'package:security_camera/Models/url_history.dart';
 import 'package:security_camera/Views/HomeScreen.dart';
 
 void main() async {
+  
   WidgetsFlutterBinding.ensureInitialized();
   
   final controller = UrlHistoryController();
@@ -20,7 +23,13 @@ void main() async {
 }
 
 
-  runApp(MyApp(controller: controller));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => Converturlprovider()),
+      ],
+      child: MyApp(controller: controller),
+    ),);
 }
 
 class MyApp extends StatelessWidget {

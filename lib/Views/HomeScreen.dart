@@ -5,10 +5,12 @@ import 'package:security_camera/Views/ResultScreen.dart';
 import 'package:security_camera/Widgets/CustomText.dart';
 import 'package:security_camera/Widgets/CustomTextField.dart';
 import 'package:security_camera/Widgets/SharedBottomNav.dart';
+import 'package:provider/provider.dart';
+import '../Helpers/ConvertUrlPRovider.dart';
 
 class Homescreen extends StatefulWidget {
   final UrlHistoryController controller;
-  
+
   const Homescreen({super.key, required this.controller});
 
   @override
@@ -16,60 +18,68 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
-    bool hasHistory = false;
-      List<UrlHistory> history = [];
+  bool hasHistory = false;
+  List<UrlHistory> history = [];
 
-
- @override
+  @override
   void initState() {
     super.initState();
     _checkHistory();
     widget.controller.watchChanges().listen((_) => _checkHistory());
   }
-   void _checkHistory() {
+
+  void _checkHistory() {
     final updatedHistory = widget.controller.getHistory();
     setState(() {
       history = updatedHistory;
     });
   }
+
   void _onTabSelected(AppPage page) {
     if (page == AppPage.results && history.isNotEmpty) {
       final latest = history.first;
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => Resultscreen(
-            originalUrl: latest.originalUrl,
-            shortenedUrl: latest.shortUrl,
-            controller: widget.controller,
-            shouldSave: false,
-          ),
+          builder:
+              (_) => Resultscreen(
+                originalUrl: latest.originalUrl,
+                shortenedUrl: latest.shortUrl,
+                controller: widget.controller,
+                shouldSave: false,
+              ),
         ),
       );
     }
   }
 
 
+ _handleValidUrl(String url) async {
+  final provider = Provider.of<Converturlprovider>(context, listen: false);
 
+  await provider.shortenUrlExample(url); // wait for the async call to complete
 
-  String _shortenUrl(String originalUrl) {
-    return 'https://short.ly/${originalUrl.hashCode.toRadixString(36)}';
-  }
+  final shortened = provider.shortenedData;
 
-
-  void _handleValidUrl(String url) {
-    final shortenedUrl = _shortenUrl(url);
+  if (shortened != null) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => Resultscreen(
+          key: UniqueKey(),
           originalUrl: url,
-          shortenedUrl: shortenedUrl,
+          shortenedUrl: shortened.shortened,
           controller: widget.controller,
         ),
       ),
     );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to shorten URL. Try again.")),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +94,8 @@ class _HomescreenState extends State<Homescreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: CustomText.subtitle(
-                text: "Tired of Long Links? This app provides easy-to-use URL shortening",
+                text:
+                    "Tired of Long Links? This app provides easy-to-use URL shortening",
               ),
             ),
             const SizedBox(height: 16),
@@ -93,10 +104,17 @@ class _HomescreenState extends State<Homescreen> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Center(child: Image.asset("assets/images/www2.gif", fit: BoxFit.contain)),
+                  Center(
+                    child: Image.asset(
+                      "assets/images/www2.gif",
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                   CustomTextField.urlInput(
                     hintText: "Paste URL here...",
-                    onValidUrlSubmitted: _handleValidUrl,
+                    onValidUrlSubmitted: (url) {
+                      _handleValidUrl(url);
+                    },
                   ),
                 ],
               ),
@@ -104,7 +122,7 @@ class _HomescreenState extends State<Homescreen> {
           ],
         ),
       ),
-       bottomNavigationBar: SharedBottomNav(
+      bottomNavigationBar: SharedBottomNav(
         currentPage: AppPage.home,
         isResultEnabled: history.isNotEmpty,
         onTabSelected: _onTabSelected,

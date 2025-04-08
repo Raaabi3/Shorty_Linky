@@ -19,7 +19,7 @@ class Resultscreen extends StatefulWidget {
     required this.originalUrl,
     required this.shortenedUrl,
     required this.controller,
-    this.shouldSave = true, 
+    this.shouldSave = true,
   });
 
   @override
@@ -27,64 +27,69 @@ class Resultscreen extends StatefulWidget {
 }
 
 class _ResultscreenState extends State<Resultscreen> {
-    late final StreamSubscription _historySubscription;
-      List<UrlHistory> history = [];
+  late final StreamSubscription _historySubscription;
+  List<UrlHistory> history = [];
 
   Set<int> _selectedItems = {};
   bool _isSelectMode = false;
   AppPage currentPage = AppPage.results;
   bool hasHistory = false;
+  late String originalUrl;
+  late String shortenedUrl;
 
   @override
   void initState() {
     super.initState();
-
+    originalUrl = widget.originalUrl;
+    shortenedUrl = widget.shortenedUrl;
     if (widget.shouldSave) {
       _saveCurrentUrl();
     }
-      _updateHistory();
+    _updateHistory();
 
-
-    _historySubscription = widget.controller
-        .watchChanges()
-        .listen((_) => _safeCheckHistory());
+    _historySubscription = widget.controller.watchChanges().listen(
+      (_) => _safeCheckHistory(),
+    );
   }
 
-   void _safeCheckHistory() {
+  void _safeCheckHistory() {
     if (!mounted) return;
     _updateHistory();
   }
+
   void _onTabSelected(AppPage page) {
     if (page == AppPage.home) {
-      Navigator.pop(context); 
+      Navigator.pop(context);
     }
   }
 
- void _updateHistory() {
+  void _updateHistory() {
     final updated = widget.controller.getHistory();
     setState(() {
       history = updated;
       hasHistory = updated.isNotEmpty;
     });
   }
- void _checkHistory() {
+
+  void _checkHistory() {
     final history = widget.controller.getHistory();
     setState(() => hasHistory = history.isNotEmpty);
   }
 
   Future<void> _saveCurrentUrl() async {
-  await widget.controller.addUrl(
-    originalUrl: widget.originalUrl,
-    shortUrl: widget.shortenedUrl,
-  );
-  if (!mounted) return; 
-}
- @override
+    
+    await widget.controller.addUrl(
+      originalUrl: widget.originalUrl,
+      shortUrl: widget.shortenedUrl,
+    );
+    if (!mounted) return;
+  }
+
+  @override
   void dispose() {
     _historySubscription.cancel();
     super.dispose();
   }
-
 
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text)).then((_) {
@@ -127,17 +132,23 @@ class _ResultscreenState extends State<Resultscreen> {
         backgroundColor: Colors.blue,
         title:
             _isSelectMode
-                ? Text('${_selectedItems.length} selected',style: TextStyle(color:Colors.white))
+                ? Text(
+                  '${_selectedItems.length} selected',
+                  style: TextStyle(color: Colors.white),
+                )
                 : CustomText.title2(text: "Shortened Link"),
         centerTitle: true,
         leading:
             _isSelectMode
                 ? IconButton(
-                  icon: const Icon(Icons.close,color: Colors.white,),
+                  icon: const Icon(Icons.close, color: Colors.white),
                   onPressed: _toggleSelectMode,
                 )
                 : IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded,color: Colors.white),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
         actions: _buildAppBarActions(),
@@ -152,12 +163,12 @@ class _ResultscreenState extends State<Resultscreen> {
           Expanded(child: _buildHistoryList()),
         ],
       ),
-       bottomNavigationBar: SharedBottomNav(
-      currentPage: currentPage,
-      isResultEnabled: hasHistory,
-      onTabSelected: _onTabSelected,
+      bottomNavigationBar: SharedBottomNav(
+        currentPage: currentPage,
+        isResultEnabled: hasHistory,
+        onTabSelected: _onTabSelected,
         history: history,
-    ),
+      ),
     );
   }
 
@@ -167,7 +178,7 @@ class _ResultscreenState extends State<Resultscreen> {
         IconButton(
           icon: const Icon(Icons.delete),
           onPressed: _selectedItems.isNotEmpty ? _deleteSelected : null,
-          color: Colors.white
+          color: Colors.white,
         ),
       ];
     } else {
@@ -175,7 +186,7 @@ class _ResultscreenState extends State<Resultscreen> {
         IconButton(
           icon: const Icon(Icons.select_all),
           onPressed: _toggleSelectMode,
-          color: Colors.white
+          color: Colors.white,
         ),
       ];
     }
@@ -198,7 +209,7 @@ class _ResultscreenState extends State<Resultscreen> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.shortenedUrl,
+                    shortenedUrl,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -246,28 +257,31 @@ class _ResultscreenState extends State<Resultscreen> {
   }
 
   StreamBuilder<BoxEvent> _buildHistoryList() {
-  return StreamBuilder<BoxEvent>(
-    stream: widget.controller.watchChanges(),
-    builder: (context, snapshot) {
-      final historyMap = widget.controller.getHistoryMap();
-      final historyEntries = historyMap.entries.toList().reversed.toList();
+    return StreamBuilder<BoxEvent>(
+      stream: widget.controller.watchChanges(),
+      builder: (context, snapshot) {
+        final historyMap = widget.controller.getHistoryMap();
+        final historyEntries = historyMap.entries.toList().reversed.toList();
 
-      if (historyEntries.isEmpty) {
-        return Center(
-          child: Text("No history available", style: TextStyle(fontSize: 18, color: Colors.grey)),
+        if (historyEntries.isEmpty) {
+          return Center(
+            child: Text(
+              "No history available",
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          itemCount: historyEntries.length,
+          itemBuilder: (context, index) {
+            final entry = historyEntries[index];
+            return _buildHistoryItem(entry.key, entry.value);
+          },
         );
-      }
-
-      return ListView.builder(
-        itemCount: historyEntries.length,
-        itemBuilder: (context, index) {
-          final entry = historyEntries[index];
-          return _buildHistoryItem(entry.key, entry.value);
-        },
-      );
-    },
-  );
-}
+      },
+    );
+  }
 
   Widget _buildHistoryItem(int key, UrlHistory item) {
     return InkWell(
@@ -314,7 +328,7 @@ class _ResultscreenState extends State<Resultscreen> {
         return const Icon(Icons.search, color: Colors.red);
       case "youtube":
         return const Icon(Icons.play_circle_fill, color: Colors.red);
-      case "twitter":
+      case "x":
         return const Icon(Icons.trending_up, color: Colors.blue);
       case "github":
         return const Icon(Icons.code, color: Colors.black);

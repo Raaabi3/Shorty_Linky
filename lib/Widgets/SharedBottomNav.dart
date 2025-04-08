@@ -7,7 +7,7 @@ class SharedBottomNav extends StatelessWidget {
   final AppPage currentPage;
   final bool isResultEnabled;
   final void Function(AppPage) onTabSelected;
-  final List<UrlHistory> history; // List of history to check
+  final List<UrlHistory> history; 
 
   const SharedBottomNav({
     super.key,
@@ -24,7 +24,7 @@ class SharedBottomNav extends StatelessWidget {
       onTap: (index) {
         final selectedPage = AppPage.values[index];
         if (selectedPage == AppPage.results && history.isEmpty) {
-          _showNoHistoryDialog(context); // Show popup if history is empty
+          _showNoHistoryDialog(context); 
           return;
         }
         if (selectedPage == AppPage.results && !isResultEnabled) return;
@@ -49,7 +49,6 @@ class SharedBottomNav extends StatelessWidget {
     );
   }
 
-  // Function to show the alert dialog when history is empty
   void _showNoHistoryDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -60,7 +59,7 @@ class SharedBottomNav extends StatelessWidget {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop(); 
               },
               child: const Text('OK',style: TextStyle(color:Colors.blue
               )),

@@ -10,7 +10,6 @@ class CustomTextField extends StatefulWidget {
     required this.hintText,
     this.onValidUrlSubmitted,
     this.borderRadius = 12.0,
-    
   });
 
   @override
@@ -23,19 +22,17 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   bool _validateUrl(String url) {
     if (url.isEmpty) return false;
-    
-    final urlPattern = r'^(?:(?:https?|ftp):\/\/)?'  
-        r'(?:www\.)?'                               
-        r'(?:(?:[a-z0-9\-]+\.)+)'                   
-        r'([a-z]{2,})'                              
-        r'(?:\/[^\s]*)?$';                          
+
+    final urlPattern =
+        r'^(https?:\/\/)'
+        r'([a-z0-9-]+\.)+[a-z]{2,}'
+        r'(\/[^\s]*)?$';
 
     return RegExp(urlPattern, caseSensitive: false).hasMatch(url);
   }
 
-  void _handleSubmitted(String value) {
-    final trimmedValue = value.trim();
-    
+  void _handleSubmitted(String url) {
+    final trimmedValue = url.trim();
     if (trimmedValue.isEmpty) {
       setState(() => _errorText = "URL cannot be empty");
       return;
@@ -45,7 +42,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
       setState(() => _errorText = null);
       widget.onValidUrlSubmitted?.call(trimmedValue);
     } else {
-      setState(() => _errorText = "Enter a valid URL (e.g., https://example.com or www.example.com)");
+      setState(
+        () =>
+            _errorText = "Enter a valid URL (e.g start with http:// end with .com)",
+      );
     }
   }
 
@@ -63,7 +63,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
             setState(() => _errorText = null);
           },
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
         ),
